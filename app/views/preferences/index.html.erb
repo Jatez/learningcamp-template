@@ -1,7 +1,7 @@
 <% max_preferences = Preference::MAX_PREFERENCES %>
 
 <%= render ::RS::List::Component.new do |component| %>
-  <% if @preferences.count < max_preferences %>
+  <% if @preferences&.count.to_i < max_preferences %>
     <%= component.with_info(
       title: t('views.preferences.title'),
       description: t('views.preferences.show.title'),
@@ -21,18 +21,18 @@
 
   <%= component.with_header(column_names: t('views.preferences.columns')) %>
 
-  <% @records.all.each do |preference| %>
+  <% @records&.each do |preference| %>
     <%= component.with_row(
       row_values: [
-                { value: preference.name },
-                { value: preference.description },
-                { value: preference.restriction }
-              ],
-              actions: [
-                { name: 'show', url: preference_path(preference), target: 'panel' },
-                { name: 'edit', url: edit_preference_path(id: preference.id), target: 'panel' },
-                { name: 'remove', url: preference_path(id: preference.id), method: :delete }
-              ]
+        { value: preference.name },
+        { value: preference.description },
+        { value: preference.restriction }
+      ],
+      actions: [
+        { name: 'show', url: preference_path(preference), target: 'panel' },
+        { name: 'edit', url: edit_preference_path(id: preference.id), target: 'panel' },
+        { name: 'remove', url: preference_path(id: preference.id), method: :delete }
+      ]
     ) %>
   <% end %>
 
@@ -43,6 +43,6 @@
     from: @pagy.from,
     count: @pagy.count,
     series_with_url: series_with_url(@pagy),
-    current_page: @pagy.page)
-  %>
+    current_page: @pagy.page
+  ) %>
 <% end %>

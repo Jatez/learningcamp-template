@@ -21,7 +21,7 @@ class RecipeGeneratorService
 
   def check_valid_message_length
     error_msg = I18n.t('api.errors.invalid_message_length')
-    raise RecipeGeneratorServiceError, error_msg unless !!(message =~ /\b\w+\b/)
+    raise RecipeGeneratorServiceError, error_msg unless message.present?
   end
 
   def message_to_chat_api
@@ -41,15 +41,11 @@ class RecipeGeneratorService
   end
 
   def prompt
-    <<~CONTENT
-      Prompt goes here
-    CONTENT
+    "Generate a recipe using the following ingredients: #{message}"
   end
 
   def new_message
-    [
-      { role: 'user', content: "Ingredients: #{message}" }
-    ]
+    [{ role: 'user', content: "Ingredients: #{message}" }]
   end
 
   def openai_client
@@ -57,10 +53,17 @@ class RecipeGeneratorService
   end
 
   def create_recipe(response)
-    parsed_response = response.is_a?(String) ? JSON.parse(response) : response
-    content = JSON.parse(parsed_response.dig('choices', 0, 'message', 'content'))
-    # create recipe here
+    # La respuesta es siempre un texto en formato de receta
+    content = parse_recipe_text(response.dig('choices', 0, 'message', 'content'))
+    { 'name' => content[:name], 'content' => content[:instructions] }
   rescue JSON::ParserError => exception
-    raise RecipeGeneratorServiceError, exception.message
+    raise RecipeGeneratorServiceError, "Failed to parse recipe: #{exception.message}"
+  end
+
+  def parse_recipe_text(text)
+    # Extrae el nombre de la receta y las instrucciones
+    name = text.match(/^Recipe:\s*(.*)$/)&.captures&.first || 'Generated Recipe'
+    instructions = text.split("\n").drop(1).join("\n").strip
+    { name: name, instructions: instructions }
   end
 end
